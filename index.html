@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mandala Builder</title>
+  <title>Mandala builder</title>
   <style>
     body {
       font-family: sans-serif;
@@ -18,132 +18,211 @@
       display: block;
       margin-left: auto;
       margin-right: auto;
+      max-width: 90vw;
     }
-    input, button {
-      padding: 10px;
+
+    .date-wrapper {
+      position: relative;
+      display: inline-block;
+      width: 150px;
+      vertical-align: middle;
+    }
+
+    input[type="date"], button {
       font-size: 18px;
+      padding: 10px 20px;
       margin: 5px;
+      width: 150px;
+      height: 44px;
+      box-sizing: border-box;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    input[type="date"] {
+      padding-left: 12px;
+    }
+
+    /* Плейсхолдер как текст рядом с input */
+    .placeholder-text {
+      position: absolute;
+      top: 50%;
+      left: 12px;
+      transform: translateY(-50%);
+      color: #888;
+      pointer-events: none;
+      transition: 0.2s ease all;
+      font-size: 18px;
+      user-select: none;
+    }
+    input[type="date"]:focus + .placeholder-text,
+    input[type="date"]:not(:placeholder-shown) + .placeholder-text {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
 
-<h2>Mandala builder</h2>
-<input type="date" id="dateInput" />
-<button onclick="generateTriangle()">Build</button>
-<button onclick="downloadImage()">Save</button>
-<canvas id="canvas"></canvas>
+  <h2>Mandala builder</h2>
 
-<script>
-const colorMap = {
-  0: "#ff0000", 1: "#ff0000", 2: "#0000ff", 3: "#008000", 4: "#ffff00",
-  5: "#00ffff", 6: "#40e0d0", 7: "#ff69b4", 8: "#ffa500", 9: "#800080"
-};
+  <div class="date-wrapper">
+    <input type="date" id="dateInput" placeholder=" " />
+    <span class="placeholder-text">dd.mm.yyyy</span>
+  </div>
 
-let canvas = document.getElementById("canvas");
-let ctx = canvas.getContext("2d");
-let pyramidGlobal = null;
+  <button onclick="generateTriangle()">Build</button>
+  <button onclick="downloadImage()">Save</button>
 
-function getDigitArray(dateStr) {
-  const [yyyy, mm, dd] = dateStr.split("-");
-  const base = [...dd + mm + yyyy].map(Number);
-  return base.concat([...base].reverse());
-}
+  <br />
+  <canvas id="canvas"></canvas>
 
-function buildPyramid(base) {
-  const pyramid = [base];
-  let current = base;
-  while (current.length > 1) {
-    const next = [];
-    for (let i = 0; i < current.length - 1; i++) {
-      let sum = current[i] + current[i + 1];
-      if (sum >= 10) sum = Math.floor(sum / 10) + (sum % 10);
-      next.push(sum);
+  <script>
+    const colorMap = {
+      0: "#ff0000",
+      1: "#ff0000",
+      2: "#0000ff",
+      3: "#008000",
+      4: "#ffff00",
+      5: "#00ffff",
+      6: "#40e0d0",
+      7: "#ff69b4",
+      8: "#ffa500",
+      9: "#800080"
+    };
+
+    let canvas, ctx, scale;
+    let pyramidGlobal = null;
+
+    function resizeCanvas() {
+      if (!pyramidGlobal) return;
+
+      canvas = document.getElementById("canvas");
+      ctx = canvas.getContext("2d");
+      scale = window.devicePixelRatio || 1;
+
+      const maxCanvasWidth = Math.min(window.innerWidth * 0.9, 600);
+      const rows = pyramidGlobal.length;
+      const maxRowLength = pyramidGlobal[0].length;
+
+      const maxSquareSize = 40;
+      let size = Math.min(maxSquareSize, Math.floor(maxCanvasWidth / maxRowLength));
+      let height = rows * size + 40;
+
+      canvas.width = maxCanvasWidth * scale;
+      canvas.height = height * scale;
+      canvas.style.width = maxCanvasWidth + "px";
+      canvas.style.height = height + "px";
+
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(scale, scale);
+
+      drawTriangle(ctx, pyramidGlobal, size, scale);
     }
-    pyramid.push(next);
-    current = next;
-  }
-  return pyramid;
-}
 
-function drawTriangle(pyramid, size) {
-  const rows = pyramid.length;
-  const cols = pyramid[0].length;
-  const width = cols * size;
-  const height = rows * size + 40;
+    function generateTriangle() {
+      canvas = document.getElementById("canvas");
+      ctx = canvas.getContext("2d");
 
-  const dpr = 1;
-  canvas.width = width * dpr;
-  canvas.height = height * dpr;
-  canvas.style.width = width + "px";
-  canvas.style.height = height + "px";
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const dateStr = document.getElementById("dateInput").value;
+      if (!dateStr) {
+        alert("Please select a date");
+        return;
+      }
 
-  const centerX = width / 2;
-  const startY = 20;
+      const digits = getDigitArray(dateStr);
+      pyramidGlobal = buildPyramid(digits);
+      resizeCanvas();
+    }
 
-  for (let row = 0; row < pyramid.length; row++) {
-    const nums = pyramid[row];
-    const y = startY + row * size;
-    const offsetX = centerX - (nums.length * size) / 2;
+    function getDigitArray(dateStr) {
+      const [yyyy, mm, dd] = dateStr.split("-");
+      const base = [...dd + mm + yyyy].map(Number);
+      return base.concat([...base].reverse());
+    }
 
-    for (let i = 0; i < nums.length; i++) {
-      const x = offsetX + i * size;
-      const digit = nums[i];
+    function buildPyramid(base) {
+      const pyramid = [base];
+      let current = base;
+      while (current.length > 1) {
+        const next = [];
+        for (let i = 0; i < current.length - 1; i++) {
+          let sum = current[i] + current[i + 1];
+          if (sum >= 10) sum = Math.floor(sum / 10) + (sum % 10);
+          next.push(sum);
+        }
+        pyramid.push(next);
+        current = next;
+      }
+      return pyramid;
+    }
 
-      // Цвет заливки
-      ctx.fillStyle = colorMap[digit];
+    function drawSquare(ctx, x, y, size, fillStyle, scale) {
+      ctx.fillStyle = fillStyle;
       ctx.fillRect(x, y, size, size);
 
-      // Обводка квадрата
+      // Черная обводка толщиной 1px с учётом масштаба
       ctx.strokeStyle = "#000";
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 1 / scale;
       ctx.strokeRect(x, y, size, size);
-
-      // Текст
-      ctx.fillStyle = "#000";
-      ctx.font = `${Math.floor(size / 2)}px Arial`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(digit, x + size / 2, y + size / 2);
     }
-  }
-}
 
-function generateTriangle() {
-  const dateStr = document.getElementById("dateInput").value;
-  if (!dateStr) {
-    alert("Please select a date");
-    return;
-  }
-  const digits = getDigitArray(dateStr);
-  pyramidGlobal = buildPyramid(digits);
+    function drawTriangle(ctx, pyramid, size, scale) {
+      const rows = pyramid.length;
+      const centerX = ctx.canvas.width / scale / 2;
+      const startY = 20;
 
-  const maxWidth = Math.min(window.innerWidth * 0.9, 600);
-  const size = Math.min(40, Math.floor(maxWidth / pyramidGlobal[0].length));
-  drawTriangle(pyramidGlobal, size);
-}
+      ctx.clearRect(0, 0, ctx.canvas.width / scale, ctx.canvas.height / scale);
 
-function downloadImage() {
-  if (!pyramidGlobal) {
-    alert("Please build the mandala first");
-    return;
-  }
+      for (let row = 0; row < rows; row++) {
+        const nums = pyramid[row];
+        const y = startY + row * size;
+        const offsetX = centerX - (nums.length * size) / 2;
 
-  const dateStr = document.getElementById("dateInput").value || "image";
-  const filename = `mandala-${dateStr}.png`;
+        for (let i = 0; i < nums.length; i++) {
+          const x = offsetX + i * size;
+          const digit = nums[i];
+          drawSquare(ctx, x, y, size, colorMap[digit], scale);
 
-  const link = document.createElement("a");
-  link.download = filename;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-}
+          ctx.fillStyle = "#000";
+          ctx.font = `${Math.floor(size / 2)}px Arial`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(digit, x + size / 2, y + size / 2);
+        }
+      }
+    }
 
-window.addEventListener("resize", () => {
-  if (pyramidGlobal) generateTriangle();
-});
-</script>
+    function downloadImage() {
+      if (!pyramidGlobal) {
+        alert("Please build the mandala first");
+        return;
+      }
+
+      const dateStr = document.getElementById("dateInput").value || "image";
+      const filename = `mandala-${dateStr}.png`;
+
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    window.addEventListener("resize", () => {
+      if (pyramidGlobal) resizeCanvas();
+    });
+  </script>
 
 </body>
 </html>
