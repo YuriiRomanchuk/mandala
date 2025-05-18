@@ -72,7 +72,7 @@ function drawTriangle(pyramid, size) {
   const width = cols * size;
   const height = rows * size + 40;
 
-  const dpr = 1; // фиксируем масштаб 1:1 для совместимости
+  const dpr = 1;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   canvas.style.width = width + "px";
@@ -91,9 +91,17 @@ function drawTriangle(pyramid, size) {
     for (let i = 0; i < nums.length; i++) {
       const x = offsetX + i * size;
       const digit = nums[i];
+
+      // Цвет заливки
       ctx.fillStyle = colorMap[digit];
       ctx.fillRect(x, y, size, size);
 
+      // Обводка квадрата
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, size, size);
+
+      // Текст
       ctx.fillStyle = "#000";
       ctx.font = `${Math.floor(size / 2)}px Arial`;
       ctx.textAlign = "center";
@@ -123,9 +131,11 @@ function downloadImage() {
     return;
   }
 
+  const dateStr = document.getElementById("dateInput").value || "image";
+  const filename = `mandala-${dateStr}.png`;
+
   const link = document.createElement("a");
-  link.download = `mandala-${document.getElementById("dateInput").value || "image"}.png`;
-  // Не используем отдельный canvas — Safari часто режет их
+  link.download = filename;
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
