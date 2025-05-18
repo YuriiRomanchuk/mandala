@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mandala builder</title>
+  <title>Mandala Builder</title>
   <style>
     body {
       font-family: sans-serif;
@@ -18,8 +18,6 @@
       display: block;
       margin-left: auto;
       margin-right: auto;
-      max-width: 90vw;
-      height: auto;
     }
     input, button {
       padding: 10px;
@@ -34,7 +32,6 @@
 <input type="date" id="dateInput" />
 <button onclick="generateTriangle()">Build</button>
 <button onclick="downloadImage()">Save</button>
-<br />
 <canvas id="canvas"></canvas>
 
 <script>
@@ -46,7 +43,6 @@ const colorMap = {
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
 let pyramidGlobal = null;
-let squareSize = 30;
 
 function getDigitArray(dateStr) {
   const [yyyy, mm, dd] = dateStr.split("-");
@@ -76,20 +72,18 @@ function drawTriangle(pyramid, size) {
   const width = cols * size;
   const height = rows * size + 40;
 
-  // Настройка canvas
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = 1; // фиксируем масштаб 1:1 для совместимости
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   canvas.style.width = width + "px";
   canvas.style.height = height + "px";
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  ctx.clearRect(0, 0, width, height);
   const centerX = width / 2;
   const startY = 20;
 
-  for (let row = 0; row < rows; row++) {
+  for (let row = 0; row < pyramid.length; row++) {
     const nums = pyramid[row];
     const y = startY + row * size;
     const offsetX = centerX - (nums.length * size) / 2;
@@ -117,9 +111,10 @@ function generateTriangle() {
   }
   const digits = getDigitArray(dateStr);
   pyramidGlobal = buildPyramid(digits);
+
   const maxWidth = Math.min(window.innerWidth * 0.9, 600);
-  squareSize = Math.min(40, Math.floor(maxWidth / pyramidGlobal[0].length));
-  drawTriangle(pyramidGlobal, squareSize);
+  const size = Math.min(40, Math.floor(maxWidth / pyramidGlobal[0].length));
+  drawTriangle(pyramidGlobal, size);
 }
 
 function downloadImage() {
@@ -130,14 +125,13 @@ function downloadImage() {
 
   const link = document.createElement("a");
   link.download = `mandala-${document.getElementById("dateInput").value || "image"}.png`;
+  // Не используем отдельный canvas — Safari часто режет их
   link.href = canvas.toDataURL("image/png");
   link.click();
 }
 
 window.addEventListener("resize", () => {
-  if (pyramidGlobal) {
-    generateTriangle();
-  }
+  if (pyramidGlobal) generateTriangle();
 });
 </script>
 
