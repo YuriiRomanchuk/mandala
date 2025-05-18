@@ -36,7 +36,7 @@
 <body>
 
   <h2>Mandala builder</h2>
-  <input type="text" id="dateInput" placeholder="Select a date" />
+  <input type="text" id="dateInput" />
   <button onclick="generateTriangle()">Build</button>
   <button onclick="downloadImage()">Save</button>
   <br />
@@ -44,10 +44,23 @@
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
+    // Функция для получения сегодняшней даты в формате DD-MM-YYYY
+    function getTodayDateStr() {
+      const today = new Date();
+      const dd = String(today.getDate()).padStart(2, '0');
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const yyyy = today.getFullYear();
+      return `${dd}-${mm}-${yyyy}`;
+    }
+
+    // Ставим в поле дату вручную
+    document.getElementById('dateInput').value = getTodayDateStr();
+
     flatpickr("#dateInput", {
-      dateFormat: "Y-m-d",
+      dateFormat: "d-m-Y",
       maxDate: "today",
       allowInput: true,
+      defaultDate: new Date()
     });
 
     const colorMap = {
@@ -102,18 +115,23 @@
         return;
       }
 
-      // Validate date format YYYY-MM-DD (basic)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-        alert("Date format must be YYYY-MM-DD");
+      // Проверка формата даты DD-MM-YYYY
+      if (!/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+        alert("Date format must be DD-MM-YYYY");
         return;
       }
 
-      const digits = getDigitArray(dateStr);
+      // Преобразуем дату к формату YYYY-MM-DD для дальнейшей работы
+      const [dd, mm, yyyy] = dateStr.split("-");
+      const reformattedDate = `${yyyy}-${mm}-${dd}`;
+
+      const digits = getDigitArray(reformattedDate);
       pyramidGlobal = buildPyramid(digits);
       resizeCanvas();
     }
 
     function getDigitArray(dateStr) {
+      // dateStr здесь в формате YYYY-MM-DD
       const [yyyy, mm, dd] = dateStr.split("-");
       const base = [...dd + mm + yyyy].map(Number);
       return base.concat([...base].reverse());
@@ -139,7 +157,7 @@
       ctx.fillStyle = fillStyle;
       ctx.fillRect(x, y, size, size);
 
-      // Add black border
+      // Рисуем чёрную рамку
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 1 / scale;
       ctx.strokeRect(x, y, size, size);
@@ -177,8 +195,14 @@
         return;
       }
 
-      const dateStr = document.getElementById("dateInput").value || "image";
-      const filename = `mandala-${dateStr}.png`;
+      const dateStrInput = document.getElementById("dateInput").value;
+      let filenameDate = "image";
+      if (/^\d{2}-\d{2}-\d{4}$/.test(dateStrInput)) {
+        const [dd, mm, yyyy] = dateStrInput.split("-");
+        filenameDate = `${yyyy}-${mm}-${dd}`;
+      }
+
+      const filename = `mandala-${filenameDate}.png`;
 
       const link = document.createElement("a");
       link.download = filename;
