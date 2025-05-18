@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Mandala builder</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #f5f5f5;
+    margin: 0; padding: 20px;
+  }
+  canvas {
+    background: white;
+    border: 1px solid #ccc;
+    margin-top: 20px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 90vw;
+  }
+  input, button {
+    padding: 10px;
+    font-size: 18px;
+    margin: 5px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Mandala builder</h2>
+<input type="date" id="dateInput" />
+<button onclick="generateTriangle()">Build</button>
+<button onclick="downloadImage()">Save</button>
+<br />
+<canvas id="canvas"></canvas>
+
+<script>
+const colorMap = {
+  0: "#ff0000",
+  1: "#ff0000",
+  2: "#0000ff",
+  3: "#008000",
+  4: "#ffff00",
+  5: "#00ffff",
+  6: "#40e0d0",
+  7: "#ff69b4",
+  8: "#ffa500",
+  9: "#800080"
+};
+
+let canvas, ctx, scale;
+let pyramidGlobal = null;
+
+function resizeCanvas() {
+  if (!pyramidGlobal) return;
+
+  canvas = document.getElementById("canvas");
+  ctx = canvas.getContext("2d");
+  scale = window.devicePixelRatio || 1;
+
+  const maxCanvasWidth = Math.min(window.innerWidth * 0.9, 600); // макс ширина 600px
+  const rows = pyramidGlobal.length;
+  const maxRowLength = pyramidGlobal[0].length;
+
+  // Максимальный размер квадрата
+  const maxSquareSize = 40;
+
+  // Вычисляем размер квадрата — минимальный из maxSquareSize и ширина на кол-во квадратов
+  let size = Math.min(maxSquareSize, Math.floor(maxCanvasWidth / maxRowLength));
+
+  // Высота canvas = количество строк * size + отступ
+  let height = rows * size + 40;
+
+  canvas.width = maxCanvasWidth * scale;
+  canvas.height = height * scale;
+  canvas.style.width = maxCanvasWidth + "px";
+  canvas.style.height = height + "px";
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.scale(scale, scale);
+
+  drawTriangleUpsideDown(ctx, pyramidGlobal, size);
+}
+
+function generateTriangle() {
+  canvas = document.getElementById("canvas");
+  ctx = canvas.getContext("2d");
+
+  const dateStr = document.getElementById("dateInput").value;
+  if (!dateStr) {
+    alert("Please select a date");
+    return;
+  }
+
+  const digits = getDigitArray(dateStr);
+  pyramidGlobal = buildPyramid(digits);
+  resizeCanvas();
+}
+
+function getDigitArray(dateStr) {
+  const [yyyy, mm, dd] = dateStr.split("-");
+  const base = [...dd + mm + yyyy].map(Number);
+  return base.concat([...base].reverse());
+}
+
+function buildPyramid(base) {
+  const pyramid = [base];
+  let current = base;
+  while (current.length > 1) {
+    const next = [];
+    for (let i = 0; i < current.length - 1; i++) {
+      let sum = current[i] + current[i + 1];
+      if (sum >= 10) sum = Math.floor(sum / 10) + (sum % 10);
+      next.push(sum);
+    }
+    pyramid.push(next);
+    current = next;
+  }
+  return pyramid;
+}
+
+function drawSquare(ctx, x, y, size, fillStyle) {
+  ctx.fillStyle = fillStyle;
+  ctx.fillRect(x, y, size, size);
+}
+
+function drawTriangleUpsideDown(ctx, pyramid, size) {
+  const rows = pyramid.length;
+  const centerX = ctx.canvas.width / scale / 2;
+  const startY = 20;
+
+  ctx.clearRect(0, 0, ctx.canvas.width / scale, ctx.canvas.height / scale);
+
+  for (let row = 0; row < rows; row++) {
+    const nums = pyramid[row];
+    const y = startY + row * size;
+    const offsetX = centerX - (nums.length * size) / 2;
+
+    for (let i = 0; i < nums.length; i++) {
+      const x = offsetX + i * size;
+      const digit = nums[i];
+      drawSquare(ctx, x, y, size, colorMap[digit]);
+
+      ctx.fillStyle = "#000";
+      ctx.font = `${Math.floor(size / 2)}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(digit, x + size / 2, y + size / 2);
+    }
+  }
+}
+
+function downloadImage() {
+  if (!pyramidGlobal) {
+    alert("Please build the mandala first");
+    return;
+  }
+
+  const maxWidth = canvas.width / scale;
+  const maxHeight = canvas.height / scale;
+
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = maxWidth;
+  tempCanvas.height = maxHeight;
+  const tempCtx = tempCanvas.getContext("2d");
+
+  tempCtx.drawImage(canvas, 0, 0);
+
+  const image = tempCanvas.toDataURL("image/png");
+  const dateStr = document.getElementById("dateInput").value || "mandala";
+  const link = document.createElement("a");
+  link.href = image;
+  link.download = `mandala-${dateStr}.png`;
+  link.click();
+}
+
+window.addEventListener("resize", resizeCanvas);
+</script>
+
+</body>
+</html>
