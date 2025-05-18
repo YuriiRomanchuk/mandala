@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Mandala builder</title>
+  <title>Mandala builder with Flatpickr</title>
+  <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
   <style>
     body {
       font-family: sans-serif;
@@ -20,33 +21,35 @@
       margin-right: auto;
       max-width: 90vw;
     }
-    input[type="date"] {
+    input, button {
       padding: 10px;
       font-size: 18px;
       margin: 5px;
-      width: 250px;  /* шире поле даты */
-      box-sizing: border-box;
+      vertical-align: middle;
     }
-    button {
-      padding: 10px;
-      font-size: 18px;
-      margin: 5px;
-      width: 150px; /* одинаковая ширина у кнопок */
-      box-sizing: border-box;
-      cursor: pointer;
+    #dateInput {
+      width: 220px;
+      max-width: 90vw;
     }
   </style>
 </head>
 <body>
 
   <h2>Mandala builder</h2>
-  <input type="date" id="dateInput" />
+  <input type="text" id="dateInput" placeholder="Select a date" />
   <button onclick="generateTriangle()">Build</button>
   <button onclick="downloadImage()">Save</button>
   <br />
   <canvas id="canvas"></canvas>
 
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
+    flatpickr("#dateInput", {
+      dateFormat: "Y-m-d",
+      maxDate: "today",
+      allowInput: true,
+    });
+
     const colorMap = {
       0: "#ff0000",
       1: "#ff0000",
@@ -86,7 +89,7 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(scale, scale);
 
-      drawTriangleUpsideDown(ctx, pyramidGlobal, size, scale);
+      drawTriangle(ctx, pyramidGlobal, size, scale);
     }
 
     function generateTriangle() {
@@ -96,6 +99,12 @@
       const dateStr = document.getElementById("dateInput").value;
       if (!dateStr) {
         alert("Please select a date");
+        return;
+      }
+
+      // Validate date format YYYY-MM-DD (basic)
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        alert("Date format must be YYYY-MM-DD");
         return;
       }
 
@@ -136,7 +145,7 @@
       ctx.strokeRect(x, y, size, size);
     }
 
-    function drawTriangleUpsideDown(ctx, pyramid, size, scale) {
+    function drawTriangle(ctx, pyramid, size, scale) {
       const rows = pyramid.length;
       const centerX = ctx.canvas.width / scale / 2;
       const startY = 20;
