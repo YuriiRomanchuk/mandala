@@ -20,71 +20,29 @@
       margin-right: auto;
       max-width: 90vw;
     }
-
-    .date-wrapper {
-      position: relative;
-      display: inline-block;
-      width: 150px;
-      vertical-align: middle;
-    }
-
-    input[type="date"], button {
+    input[type="date"] {
+      padding: 10px;
       font-size: 18px;
-      padding: 10px 20px;
       margin: 5px;
-      width: 150px;
-      height: 44px;
+      width: 250px;  /* шире поле даты */
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px;
+      font-size: 18px;
+      margin: 5px;
+      width: 150px; /* одинаковая ширина у кнопок */
       box-sizing: border-box;
       cursor: pointer;
-      vertical-align: middle;
-    }
-
-    input[type="date"] {
-      padding-left: 12px;
-    }
-
-    /* Плейсхолдер как текст рядом с input */
-    .placeholder-text {
-      position: absolute;
-      top: 50%;
-      left: 12px;
-      transform: translateY(-50%);
-      color: #888;
-      pointer-events: none;
-      transition: 0.2s ease all;
-      font-size: 18px;
-      user-select: none;
-    }
-    input[type="date"]:focus + .placeholder-text,
-    input[type="date"]:not(:placeholder-shown) + .placeholder-text {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #45a049;
     }
   </style>
 </head>
 <body>
 
   <h2>Mandala builder</h2>
-
-  <div class="date-wrapper">
-    <input type="date" id="dateInput" placeholder=" " />
-    <span class="placeholder-text">dd.mm.yyyy</span>
-  </div>
-
+  <input type="date" id="dateInput" />
   <button onclick="generateTriangle()">Build</button>
   <button onclick="downloadImage()">Save</button>
-
   <br />
   <canvas id="canvas"></canvas>
 
@@ -128,7 +86,7 @@
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(scale, scale);
 
-      drawTriangle(ctx, pyramidGlobal, size, scale);
+      drawTriangleUpsideDown(ctx, pyramidGlobal, size, scale);
     }
 
     function generateTriangle() {
@@ -172,13 +130,13 @@
       ctx.fillStyle = fillStyle;
       ctx.fillRect(x, y, size, size);
 
-      // Черная обводка толщиной 1px с учётом масштаба
+      // Add black border
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 1 / scale;
       ctx.strokeRect(x, y, size, size);
     }
 
-    function drawTriangle(ctx, pyramid, size, scale) {
+    function drawTriangleUpsideDown(ctx, pyramid, size, scale) {
       const rows = pyramid.length;
       const centerX = ctx.canvas.width / scale / 2;
       const startY = 20;
