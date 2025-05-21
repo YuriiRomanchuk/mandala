@@ -2,19 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mandala builder with Flatpickr</title>
+  <title>Mandala Builder</title>
   <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
   <style>
+    :root {
+      --bg-color: #f5f5f5;
+      --text-color: #000;
+      --canvas-bg: #fff;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --text-color: #eee;
+      --canvas-bg: #1e1e1e;
+    }
     body {
       font-family: sans-serif;
       text-align: center;
-      background: #f5f5f5;
+      background: var(--bg-color);
+      color: var(--text-color);
       margin: 0;
       padding: 20px;
+      transition: background 0.3s, color 0.3s;
     }
     canvas {
-      background: white;
+      background: var(--canvas-bg);
       border: 1px solid #ccc;
       margin-top: 20px;
       display: block;
@@ -32,20 +43,35 @@
       width: 220px;
       max-width: 90vw;
     }
+    .note {
+      font-size: 14px;
+      color: gray;
+    }
+    #notification {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: #4caf50;
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
   </style>
 </head>
 <body>
-
-  <h2>Mandala builder</h2>
-  <input type="text" id="dateInput" />
-  <button onclick="generateTriangle()">Build</button>
-  <button onclick="downloadImage()">Save</button>
-  <br />
+  <h2>Mandala Builder</h2>
+  <label for="dateInput">Date:</label>
+  <input type="text" id="dateInput" placeholder="DD-MM-YYYY" aria-label="Date input" />
+  <button id="buildBtn" title="Build mandala">🛠️ Build</button>
+  <button onclick="downloadImage()" title="Save image">💾 Save</button>
+  <button onclick="toggleTheme()" title="Toggle theme">🌓 Theme</button>
+  <div class="note">Select a date to generate your triangle</div>
   <canvas id="canvas"></canvas>
+  <div id="notification"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-    // Функция для получения сегодняшней даты в формате DD-MM-YYYY
     function getTodayDateStr() {
       const today = new Date();
       const dd = String(today.getDate()).padStart(2, '0');
@@ -54,16 +80,13 @@
       return `${dd}-${mm}-${yyyy}`;
     }
 
-    // Инициализация flatpickr с правильной установкой значения
+    document.getElementById('dateInput').value = getTodayDateStr();
+
     flatpickr("#dateInput", {
       dateFormat: "d-m-Y",
       maxDate: "today",
       allowInput: true,
-      defaultDate: new Date(),
-      onReady: function(selectedDates, dateStr, instance) {
-        // Устанавливаем видимое значение вручную (важно для iOS и Android)
-        instance.input.value = getTodayDateStr();
-      }
+      defaultDate: new Date()
     });
 
     const colorMap = {
@@ -79,58 +102,41 @@
       9: "#800080"
     };
 
-    let canvas, ctx, scale;
+    let canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d"), scale;
     let pyramidGlobal = null;
+    let currentDateStr = getTodayDateStr();
 
     function resizeCanvas() {
       if (!pyramidGlobal) return;
-
-      canvas = document.getElementById("canvas");
-      ctx = canvas.getContext("2d");
       scale = window.devicePixelRatio || 1;
-
       const maxCanvasWidth = Math.min(window.innerWidth * 0.9, 600);
       const rows = pyramidGlobal.length;
       const maxRowLength = pyramidGlobal[0].length;
-
       const maxSquareSize = 40;
       let size = Math.min(maxSquareSize, Math.floor(maxCanvasWidth / maxRowLength));
-      let height = rows * size + 40;
-
+      let height = rows * size + 80;
       canvas.width = maxCanvasWidth * scale;
       canvas.height = height * scale;
       canvas.style.width = maxCanvasWidth + "px";
       canvas.style.height = height + "px";
-
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(scale, scale);
-
       drawTriangle(ctx, pyramidGlobal, size, scale);
     }
 
     function generateTriangle() {
-      canvas = document.getElementById("canvas");
-      ctx = canvas.getContext("2d");
-
       const dateStr = document.getElementById("dateInput").value;
-      if (!dateStr) {
-        alert("Please select a date");
-        return;
-      }
-
-      // Проверка формата даты DD-MM-YYYY
-      if (!/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
+      if (!dateStr || !/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
         alert("Date format must be DD-MM-YYYY");
         return;
       }
-
-      // Преобразуем дату к формату YYYY-MM-DD для дальнейшей работы
+      currentDateStr = dateStr;
       const [dd, mm, yyyy] = dateStr.split("-");
       const reformattedDate = `${yyyy}-${mm}-${dd}`;
-
       const digits = getDigitArray(reformattedDate);
       pyramidGlobal = buildPyramid(digits);
       resizeCanvas();
+      document.getElementById("buildBtn").innerText = "🛠️ Rebuild";
     }
 
     function getDigitArray(dateStr) {
@@ -158,7 +164,6 @@
     function drawSquare(ctx, x, y, size, fillStyle, scale) {
       ctx.fillStyle = fillStyle;
       ctx.fillRect(x, y, size, size);
-
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 1 / scale;
       ctx.strokeRect(x, y, size, size);
@@ -167,20 +172,21 @@
     function drawTriangle(ctx, pyramid, size, scale) {
       const rows = pyramid.length;
       const centerX = ctx.canvas.width / scale / 2;
-      const startY = 20;
-
+      const startY = 40;
       ctx.clearRect(0, 0, ctx.canvas.width / scale, ctx.canvas.height / scale);
+      ctx.fillStyle = "#888";
+      ctx.font = `bold ${Math.floor(size / 2)}px Arial`;
+      ctx.textAlign = "center";
+      ctx.fillText(`Date: ${currentDateStr}`, centerX, 20);
 
       for (let row = 0; row < rows; row++) {
         const nums = pyramid[row];
         const y = startY + row * size;
         const offsetX = centerX - (nums.length * size) / 2;
-
         for (let i = 0; i < nums.length; i++) {
           const x = offsetX + i * size;
           const digit = nums[i];
           drawSquare(ctx, x, y, size, colorMap[digit], scale);
-
           ctx.fillStyle = "#000";
           ctx.font = `${Math.floor(size / 2)}px Arial`;
           ctx.textAlign = "center";
@@ -195,26 +201,33 @@
         alert("Please build the mandala first");
         return;
       }
-
-      const dateStrInput = document.getElementById("dateInput").value;
-      let filenameDate = "image";
-      if (/^\d{2}-\d{2}-\d{4}$/.test(dateStrInput)) {
-        const [dd, mm, yyyy] = dateStrInput.split("-");
-        filenameDate = `${yyyy}-${mm}-${dd}`;
-      }
-
-      const filename = `mandala-${filenameDate}.png`;
-
+      const [dd, mm, yyyy] = currentDateStr.split("-");
+      const filename = `mandala-${yyyy}-${mm}-${dd}.png`;
       const link = document.createElement("a");
       link.download = filename;
       link.href = canvas.toDataURL("image/png");
       link.click();
+      showNotification("✅ Image saved!");
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.dataset.theme = html.dataset.theme === "dark" ? "" : "dark";
+    }
+
+    function showNotification(message) {
+      const notif = document.getElementById("notification");
+      notif.textContent = message;
+      notif.style.display = "block";
+      setTimeout(() => notif.style.display = "none", 2000);
     }
 
     window.addEventListener("resize", () => {
       if (pyramidGlobal) resizeCanvas();
     });
-  </script>
 
+    document.getElementById("buildBtn").addEventListener("click", generateTriangle);
+    window.addEventListener("DOMContentLoaded", generateTriangle);
+  </script>
 </body>
 </html>
