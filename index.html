@@ -63,7 +63,7 @@
   <h2>Mandala Builder</h2>
   <label for="dateInput">Date:</label>
   <input type="text" id="dateInput" placeholder="DD-MM-YYYY" aria-label="Date input" />
-  <button id="buildBtn" title="Build mandala">🛠️ Build</button>
+  <button id="buildBtn" title="Build mandala">🛠️ Generate</button>
   <button onclick="downloadImage()" title="Save image">💾 Save</button>
   <button onclick="toggleTheme()" title="Toggle theme">🌓 Theme</button>
   <div class="note">Select a date to generate your triangle</div>
@@ -136,7 +136,6 @@
       const digits = getDigitArray(reformattedDate);
       pyramidGlobal = buildPyramid(digits);
       resizeCanvas();
-      document.getElementById("buildBtn").innerText = "🛠️ Rebuild";
     }
 
     function getDigitArray(dateStr) {
@@ -227,7 +226,6 @@
     });
 
     document.getElementById("buildBtn").addEventListener("click", generateTriangle);
-    window.addEventListener("DOMContentLoaded", generateTriangle);
   </script>
 </body>
 </html>
