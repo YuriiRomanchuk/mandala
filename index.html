@@ -195,19 +195,31 @@
       }
     }
 
-    function downloadImage() {
-      if (!pyramidGlobal) {
-        alert("Please build the mandala first");
-        return;
-      }
-      const [dd, mm, yyyy] = currentDateStr.split("-");
-      const filename = `mandala-${yyyy}-${mm}-${dd}.png`;
-      const link = document.createElement("a");
-      link.download = filename;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-      showNotification("✅ Image saved!");
-    }
+ function downloadImage() {
+  if (!pyramidGlobal) {
+    alert("Please build the mandala first");
+    return;
+  }
+  const [dd, mm, yyyy] = currentDateStr.split("-");
+  const filename = `mandala-${yyyy}-${mm}-${dd}.png`;
+
+  const canvasData = canvas.toDataURL("image/png");
+
+  const link = document.createElement("a");
+  link.href = canvasData;
+  link.download = filename;
+
+  // iOS Safari workaround — open in new tab
+  if (navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome")) {
+    window.open(canvasData, "_blank");
+  } else {
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  showNotification("✅ Image saved!");
+}
 
     function toggleTheme() {
       const html = document.documentElement;
