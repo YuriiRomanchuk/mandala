@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mandala builder with Flatpickr</title>
   <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
   <style>
@@ -53,14 +54,16 @@
       return `${dd}-${mm}-${yyyy}`;
     }
 
-    // Ставим в поле дату вручную
-    document.getElementById('dateInput').value = getTodayDateStr();
-
+    // Инициализация flatpickr с правильной установкой значения
     flatpickr("#dateInput", {
       dateFormat: "d-m-Y",
       maxDate: "today",
       allowInput: true,
-      defaultDate: new Date()
+      defaultDate: new Date(),
+      onReady: function(selectedDates, dateStr, instance) {
+        // Устанавливаем видимое значение вручную (важно для iOS и Android)
+        instance.input.value = getTodayDateStr();
+      }
     });
 
     const colorMap = {
@@ -131,7 +134,6 @@
     }
 
     function getDigitArray(dateStr) {
-      // dateStr здесь в формате YYYY-MM-DD
       const [yyyy, mm, dd] = dateStr.split("-");
       const base = [...dd + mm + yyyy].map(Number);
       return base.concat([...base].reverse());
@@ -157,7 +159,6 @@
       ctx.fillStyle = fillStyle;
       ctx.fillRect(x, y, size, size);
 
-      // Рисуем чёрную рамку
       ctx.strokeStyle = "#000";
       ctx.lineWidth = 1 / scale;
       ctx.strokeRect(x, y, size, size);
